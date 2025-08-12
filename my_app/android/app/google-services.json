@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "30464705100",
+    "project_id": "vion-57e59",
+    "storage_bucket": "vion-57e59.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:30464705100:android:47e83efd5a81db1d12aae9",
+        "android_client_info": {
+          "package_name": "com.example.my_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBf0_AzKQLU-jeqiRjwO9yh_45DO6NqQ1w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

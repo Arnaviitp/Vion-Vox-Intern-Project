@@ -1,0 +1,35 @@
+name: my_app
+description: A new Flutter project
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase core setup
+  firebase_core: ^3.15.2
+
+  # Authentication
+  firebase_auth: ^5.3.0
+
+  # Realtime Database (remove if not needed)
+  firebase_database: ^11.1.0
+
+  # State management
+  provider: ^6.1.2
+
+  # Flutter UI
+  cupertino_icons: ^1.0.8
+  cloud_firestore: ^5.6.12
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.2
+
+flutter:
+  uses-material-design: true
