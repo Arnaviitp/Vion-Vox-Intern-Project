@@ -1,6 +1,114 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Auth Demo',
+      theme: ThemeData(primarySwatch: Colors.purple),
+      home: const LoginPage(),
+    );
+  }
+}
+
+//////////////////// LOGIN PAGE ////////////////////
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  bool isLoading = false;
+
+  Future<void> loginUser() async {
+    setState(() => isLoading = true);
+    try {
+      // 1️⃣ Try FirebaseAuth Login
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
+    } catch (_) {
+      // 2️⃣ If FirebaseAuth fails, check Realtime DB for old user
+      final dbRef = FirebaseDatabase.instance.ref().child("registrations");
+      final snapshot = await dbRef
+          .orderByChild("email")
+          .equalTo(emailController.text.trim())
+          .get();
+
+      if (snapshot.exists) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Old user login successful")),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invalid credentials")),
+        );
+      }
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Login")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: emailController,
+              decoration: const InputDecoration(labelText: "Email"),
+            ),
+            TextField(
+              controller: passwordController,
+              decoration: const InputDecoration(labelText: "Password"),
+              obscureText: true,
+            ),
+            const SizedBox(height: 20),
+            isLoading
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: loginUser,
+                    child: const Text("Login"),
+                  ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RegistrationForm()),
+                );
+              },
+              child: const Text("Register (New User)"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+//////////////////// REGISTRATION PAGE (New Users) ////////////////////
 class RegistrationForm extends StatefulWidget {
   const RegistrationForm({super.key});
 
@@ -15,6 +123,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
   final TextEditingController firstNameController = TextEditingController();
   final TextEditingController lastNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
@@ -33,9 +142,16 @@ class _RegistrationFormState extends State<RegistrationForm> {
   Future<void> submitForm() async {
     if (_formKey.currentState!.validate() && selectedRole != null) {
       setState(() => isLoading = true);
-
       try {
-        await dbRef.push().set({
+        // Create account in FirebaseAuth
+        UserCredential userCred =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: emailController.text.trim(),
+          password: passwordController.text.trim(),
+        );
+
+        // Store details in Realtime DB
+        await dbRef.child(userCred.user!.uid).set({
           "firstName": firstNameController.text.trim(),
           "lastName": lastNameController.text.trim(),
           "email": emailController.text.trim(),
@@ -45,15 +161,18 @@ class _RegistrationFormState extends State<RegistrationForm> {
           "country": countryController.text.trim(),
           "role": selectedRole,
         });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Registration Successful")),
         );
-        _formKey.currentState!.reset();
-        setState(() => selectedRole = null);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e")),
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
         );
+      } catch (e) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("Error: $e")));
       } finally {
         setState(() => isLoading = false);
       }
@@ -68,7 +187,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: const Text("Registration Form"),
+          title: const Text("Register (New User)"),
           backgroundColor: Colors.purple),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -94,6 +213,14 @@ class _RegistrationFormState extends State<RegistrationForm> {
                 validator: (value) => value!.isEmpty ? "Enter email" : null,
               ),
               TextFormField(
+                controller: passwordController,
+                decoration: const InputDecoration(labelText: "Password"),
+                obscureText: true,
+                validator: (value) => value!.length < 6
+                    ? "Password must be at least 6 characters"
+                    : null,
+              ),
+              TextFormField(
                 controller: mobileController,
                 decoration: const InputDecoration(labelText: "Mobile Number"),
                 keyboardType: TextInputType.phone,
@@ -115,7 +242,6 @@ class _RegistrationFormState extends State<RegistrationForm> {
                 decoration: const InputDecoration(labelText: "Country"),
                 validator: (value) => value!.isEmpty ? "Enter country" : null,
               ),
-              const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: selectedRole,
                 hint: const Text("Select Role"),
@@ -127,7 +253,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
               ),
               const SizedBox(height: 20),
               isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: submitForm,
                       style: ElevatedButton.styleFrom(
@@ -138,6 +264,32 @@ class _RegistrationFormState extends State<RegistrationForm> {
           ),
         ),
       ),
+    );
+  }
+}
+
+//////////////////// HOME PAGE ////////////////////
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Home"),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+              );
+            },
+            icon: const Icon(Icons.logout),
+          )
+        ],
+      ),
+      body: const Center(child: Text("Welcome!")),
     );
   }
 }
