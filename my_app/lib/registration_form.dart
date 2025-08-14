@@ -1,5 +1,4 @@
 // ignore_for_file: file_names
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -8,14 +7,36 @@ void main() {
   runApp(const MyApp());
 }
 
+//////////////////// APP ROOT ////////////////////
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'WELCOME BACK',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      title: 'Vion Arogya',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(fontFamily: 'Roboto'),
       home: const LoginPage(),
+    );
+  }
+}
+
+//////////////////// REUSABLE GRADIENT BG ////////////////////
+class GradientBackground extends StatelessWidget {
+  final Widget child;
+  const GradientBackground({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0f2027), Color(0xFF203A43), Color(0xFF2C5364)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: child,
     );
   }
 }
@@ -29,29 +50,24 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
   bool isLoading = false;
 
   Future<void> loginUser() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => isLoading = true);
+
     try {
-      // FirebaseAuth Login
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
-      _showSuccessDialog();
-      Future.delayed(const Duration(seconds: 1), () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomePage()),
-        );
-      });
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomePage()),
+      );
     } catch (_) {
-      // If FirebaseAuth fails, check Realtime DB for old user
       final dbRef = FirebaseDatabase.instance.ref().child("registrations");
       final snapshot = await dbRef
           .orderByChild("email")
@@ -59,9 +75,6 @@ class _LoginPageState extends State<LoginPage> {
           .get();
 
       if (snapshot.exists) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Old user login successful")),
-        );
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomePage()),
@@ -76,135 +89,80 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.check_circle, color: Colors.green, size: 60),
-            SizedBox(height: 16),
-            Text(
-              'Login Successful!',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Gradient Background
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.pink.shade100,
-                  Colors.blue.shade100,
-                  Colors.greenAccent.shade100,
-                  Colors.yellow.shade100,
-                  Colors.orange.shade100,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-          // Foreground
-          Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'welcome back !',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: const Color.fromARGB(255, 245, 21, 21),
-                          shadows: [
-                            Shadow(
-                              blurRadius: 8,
-                              color: Colors.black26,
-                              offset: Offset(2, 2),
-                            ),
-                          ],
+      body: GradientBackground(
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const Text(
+                  "Vion Arogya",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: emailController,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            labelStyle: TextStyle(color: Colors.white70),
+                            prefixIcon:
+                                Icon(Icons.email, color: Colors.white70),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) =>
+                              value!.isEmpty ? "Enter email" : null,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.mail_outline, color: Colors.blue, size: 40),
-                          SizedBox(width: 30),
-                          Icon(Icons.lock_outline, color: Colors.blue, size: 40),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      TextFormField(
-                        controller: emailController,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.mail_outline, color: Colors.blue),
+                        const SizedBox(height: 15),
+                        TextFormField(
+                          controller: passwordController,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: const InputDecoration(
+                            labelText: 'Password',
+                            labelStyle: TextStyle(color: Colors.white70),
+                            prefixIcon: Icon(Icons.lock, color: Colors.white70),
+                            border: OutlineInputBorder(),
+                          ),
+                          obscureText: true,
+                          validator: (value) =>
+                              value!.isEmpty ? "Enter password" : null,
                         ),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter email';
-                          }
-                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                            return 'Enter valid email';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      TextFormField(
-                        controller: passwordController,
-                        decoration: const InputDecoration(
-                          labelText: 'Password',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.lock_outline, color: Colors.blue),
-                        ),
-                        obscureText: true,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter password';
-                          }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      isLoading
-                          ? const CircularProgressIndicator()
-                          : ElevatedButton(
-                              onPressed: loginUser,
-                              child: const Text('Login'),
-                            ),
-                      const SizedBox(height: 10),
-                      Center(
-                        child: TextButton(
+                        const SizedBox(height: 20),
+                        isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.blue)
+                            : ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 50),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20)),
+                                ),
+                                onPressed: loginUser,
+                                child: const Text("Login",
+                                    style: TextStyle(color: Colors.white)),
+                              ),
+                        const SizedBox(height: 10),
+                        TextButton(
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -212,44 +170,17 @@ class _LoginPageState extends State<LoginPage> {
                                   builder: (_) => const RegistrationForm()),
                             );
                           },
-                          child: const Text(
-                            'Register (New User)',
-                            style: TextStyle(color: Colors.blue),
-                          ),
+                          child: const Text("Register (New User)",
+                              style: TextStyle(color: Colors.blueAccent)),
                         ),
-                      ),
-                      Center(
-                        child: TextButton(
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Forgot Password'),
-                                content: const Text(
-                                    'Password reset feature coming soon!'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(),
-                                    child: const Text('OK'),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            'Forgot Password?',
-                            style: TextStyle(color: Colors.blue),
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -265,25 +196,15 @@ class RegistrationForm extends StatefulWidget {
 class _RegistrationFormState extends State<RegistrationForm> {
   final _formKey = GlobalKey<FormState>();
   final dbRef = FirebaseDatabase.instance.ref().child("registrations");
-
-  final TextEditingController firstNameController = TextEditingController();
-  final TextEditingController lastNameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController mobileController = TextEditingController();
-  final TextEditingController addressController = TextEditingController();
-  final TextEditingController cityController = TextEditingController();
-  final TextEditingController countryController = TextEditingController();
-
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final mobileController = TextEditingController();
   String? selectedRole;
   bool isLoading = false;
 
-  final List<String> roles = [
-    "Student",
-    "Counselor",
-    "Life Coach",
-    "Admin (Vion)"
-  ];
+  final roles = ["Student", "Counselor", "Life Coach", "Admin (Vion)"];
 
   Future<void> submitForm() async {
     if (_formKey.currentState!.validate() && selectedRole != null) {
@@ -300,15 +221,8 @@ class _RegistrationFormState extends State<RegistrationForm> {
           "lastName": lastNameController.text.trim(),
           "email": emailController.text.trim(),
           "mobile": mobileController.text.trim(),
-          "address": addressController.text.trim(),
-          "city": cityController.text.trim(),
-          "country": countryController.text.trim(),
           "role": selectedRole,
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Registration Successful")),
-        );
 
         Navigator.pushReplacement(
           context,
@@ -320,94 +234,110 @@ class _RegistrationFormState extends State<RegistrationForm> {
       } finally {
         setState(() => isLoading = false);
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields")),
-      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-          title: const Text("Register (New User)"),
-          backgroundColor: Colors.purple),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: firstNameController,
-                decoration: const InputDecoration(labelText: "First Name"),
-                validator: (value) =>
-                    value!.isEmpty ? "Enter first name" : null,
-              ),
-              TextFormField(
-                controller: lastNameController,
-                decoration: const InputDecoration(labelText: "Last Name"),
-                validator: (value) => value!.isEmpty ? "Enter last name" : null,
-              ),
-              TextFormField(
-                controller: emailController,
-                decoration: const InputDecoration(labelText: "Email ID"),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) => value!.isEmpty ? "Enter email" : null,
-              ),
-              TextFormField(
-                controller: passwordController,
-                decoration: const InputDecoration(labelText: "Password"),
-                obscureText: true,
-                validator: (value) => value!.length < 6
-                    ? "Password must be at least 6 characters"
-                    : null,
-              ),
-              TextFormField(
-                controller: mobileController,
-                decoration: const InputDecoration(labelText: "Mobile Number"),
-                keyboardType: TextInputType.phone,
-                validator: (value) =>
-                    value!.isEmpty ? "Enter mobile number" : null,
-              ),
-              TextFormField(
-                controller: addressController,
-                decoration: const InputDecoration(labelText: "Address"),
-                validator: (value) => value!.isEmpty ? "Enter address" : null,
-              ),
-              TextFormField(
-                controller: cityController,
-                decoration: const InputDecoration(labelText: "City"),
-                validator: (value) => value!.isEmpty ? "Enter city" : null,
-              ),
-              TextFormField(
-                controller: countryController,
-                decoration: const InputDecoration(labelText: "Country"),
-                validator: (value) => value!.isEmpty ? "Enter country" : null,
-              ),
-              DropdownButtonFormField<String>(
-                value: selectedRole,
-                hint: const Text("Select Role"),
-                items: roles.map((role) {
-                  return DropdownMenuItem(value: role, child: Text(role));
-                }).toList(),
-                onChanged: (value) => setState(() => selectedRole = value),
-                validator: (value) => value == null ? "Select a role" : null,
-              ),
-              const SizedBox(height: 20),
-              isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: submitForm,
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.purple),
-                      child: const Text("Register"),
+      body: GradientBackground(
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                const Text(
+                  "Vion Arogya",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        buildInput(firstNameController, "First Name",
+                            Icons.person, false),
+                        const SizedBox(height: 15),
+                        buildInput(lastNameController, "Last Name",
+                            Icons.person_outline, false),
+                        const SizedBox(height: 15),
+                        buildInput(
+                            emailController, "Email", Icons.email, false),
+                        const SizedBox(height: 15),
+                        buildInput(
+                            passwordController, "Password", Icons.lock, true),
+                        const SizedBox(height: 15),
+                        buildInput(
+                            mobileController, "Mobile", Icons.phone, false),
+                        const SizedBox(height: 15),
+                        DropdownButtonFormField<String>(
+                          dropdownColor: const Color(0xFF203A43),
+                          value: selectedRole,
+                          hint: const Text("Select Role",
+                              style: TextStyle(color: Colors.white70)),
+                          items: roles
+                              .map((role) => DropdownMenuItem(
+                                    value: role,
+                                    child: Text(role,
+                                        style: const TextStyle(
+                                            color: Colors.white)),
+                                  ))
+                              .toList(),
+                          onChanged: (v) => setState(() => selectedRole = v),
+                          validator: (v) => v == null ? "Select a role" : null,
+                        ),
+                        const SizedBox(height: 20),
+                        isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.blue)
+                            : ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 50),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20)),
+                                ),
+                                onPressed: submitForm,
+                                child: const Text("Register",
+                                    style: TextStyle(color: Colors.white)),
+                              ),
+                      ],
                     ),
-            ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget buildInput(TextEditingController controller, String label,
+      IconData icon, bool obscure) {
+    return TextFormField(
+      controller: controller,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white70),
+        prefixIcon: Icon(icon, color: Colors.white70),
+        border: const OutlineInputBorder(),
+      ),
+      obscureText: obscure,
+      validator: (value) => value!.isEmpty ? "Enter $label" : null,
     );
   }
 }
@@ -418,22 +348,47 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Home"),
-        actions: [
-          IconButton(
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-              );
-            },
-            icon: const Icon(Icons.logout),
-          )
-        ],
+      body: GradientBackground(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              "Vion Arogya",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 30),
+            const Text(
+              "Welcome!",
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 22,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+              ),
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                );
+              },
+              child:
+                  const Text("Logout", style: TextStyle(color: Colors.white)),
+            )
+          ],
+        ),
       ),
-      body: const Center(child: Text("Welcome!")),
     );
   }
 }
