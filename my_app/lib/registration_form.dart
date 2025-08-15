@@ -325,6 +325,9 @@ class RegistrationForm extends StatefulWidget {
 class _RegistrationFormState extends State<RegistrationForm> {
   final _formKey = GlobalKey<FormState>();
   final dbRef = FirebaseDatabase.instance.ref().child("registrations");
+  final addressController = TextEditingController();
+  final cityController = TextEditingController();
+  final countryController = TextEditingController();
 
   // controllers
   final firstNameController = TextEditingController();
@@ -350,6 +353,9 @@ class _RegistrationFormState extends State<RegistrationForm> {
     passwordController.dispose();
     mobileController.dispose();
     otpController.dispose();
+    addressController.dispose();
+    cityController.dispose();
+    countryController.dispose();
     super.dispose();
   }
 
@@ -497,6 +503,9 @@ class _RegistrationFormState extends State<RegistrationForm> {
       await dbRef.child(createdUser.uid).set({
         "firstName": firstNameController.text.trim(),
         "lastName": lastNameController.text.trim(),
+        "address": addressController.text.trim(),
+        "city": cityController.text.trim(),
+        "country": countryController.text.trim(),
         "email": emailController.text.trim(),
         "mobile": mobileController.text.trim(),
         "role": selectedRole,
@@ -602,6 +611,15 @@ class _RegistrationFormState extends State<RegistrationForm> {
                         const SizedBox(height: 12),
                         buildInput(
                             passwordController, "Password", Icons.lock, true),
+                        const SizedBox(height: 12),
+                        buildInput(
+                            addressController, "Address", Icons.home, false),
+                        const SizedBox(height: 12),
+                        buildInput(
+                            cityController, "City", Icons.location_city, false),
+                        const SizedBox(height: 12),
+                        buildInput(
+                            countryController, "Country", Icons.flag, false),
                         const SizedBox(height: 12),
                         // Mobile + send otp
                         Row(
