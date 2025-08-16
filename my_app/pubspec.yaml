@@ -10,21 +10,32 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Local storage for streak, simple settings
+  shared_preferences: ^2.2.2
+
+  # Mood tracker chart package
+  fl_chart: ^0.66.0
+
   # Firebase core setup
-  firebase_core: ^3.15.2
+  firebase_core: ^3.5.0
 
   # Authentication
-  firebase_auth: ^5.3.0
+  firebase_auth: ^5.3.1
 
   # Realtime Database (remove if not needed)
-  firebase_database: ^11.1.0
+  firebase_database: ^11.1.2
+
+  # Firestore (optional if you use it)
+  cloud_firestore: ^5.4.4
 
   # State management
   provider: ^6.1.2
 
+  # Date formatting for streak keys (optional but recommended)
+  intl: ^0.19.0
+
   # Flutter UI
   cupertino_icons: ^1.0.8
-  cloud_firestore: ^5.6.12
 
 dev_dependencies:
   flutter_test:
